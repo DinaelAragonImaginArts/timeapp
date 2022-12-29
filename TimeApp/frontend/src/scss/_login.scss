@@ -1,0 +1,20 @@
+/* SCSS HEX */
+$negro1: #0b090aff;
+$negro2: #212529;
+$redblood: #660708ff;
+$red1: #a4161aff;
+$red2: #ba181bff;
+$red3: #e5383bff;
+$black-shadows: rgba(87, 87, 87, 0.6);
+$blanco1: #d3d3d3ff;
+$blanco2: #f5f3f4ff;
+$blanco3: #ffffffff;
+
+
+.logo{
+    width: 200px;
+}
+
+.negro{
+    color: $negro1!important;
+}

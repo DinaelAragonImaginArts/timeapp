@@ -1,0 +1,134 @@
+
+import useView from '../../hooks/UseView';
+import ControlButtons from './ControlButtons';
+import { useState, useEffect } from 'react';
+import clienteAxios from '../../config/clienteAxios';
+
+
+const Cronometro = ({ tarea }) => {
+    //const [timing, setTiming] = useState(0);
+    const [inicio, setInicio] = useState();
+    const [terminar, setTerminar] = useState();
+    const [step, setStep] = useState(0)
+    const [active, setActive] = useState(false);
+    const [pausa, setPausa] = useState(false);
+    const [tiempo, setTiempo] = useState(0);
+    const [estado, setEstado] = useState(false);
+    const [state, setState] = useState(false);
+
+    const { setComanda, comanda } = useView();
+
+
+
+    //const inicio = iniciio.getMinutes() + ':' + iniciio.getSeconds()
+    //console.log(60 - parseInt(inicio))
+    useEffect(() => {
+        setTiempo(terminar - inicio);
+    }, [estado])
+
+
+    useEffect(() => {
+        setTiempo(step - inicio);
+    }, [state])
+
+    function handleStart() {
+        let timing = new Date();
+        setInicio(((60 * timing.getHours()) + timing.getMinutes()))
+        setActive(true);
+    }
+
+    function handleTerminar() {
+        let timing = new Date();
+        setTerminar(((60 * timing.getHours()) + timing.getMinutes()))
+        setEstado(true);
+    }
+
+    console.log(inicio)
+    console.log(terminar)
+
+    function handlePauseResume() {
+        let timing = new Date();
+        setStep(((60 * timing.getHours()) + timing.getMinutes()))
+        setActive(false);
+        setPausa(true);
+        setState(true);
+    }
+
+
+    const guardarProgreso = async (tarea) => {
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) return
+            const config = {
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`
+                }
+            }
+
+            tarea.tiempo = parseInt(tiempo) + parseInt(tarea?.tiempo) || tiempo;
+            const { data } = await clienteAxios.put(`/tareas/${tarea._id}`, tarea, config);
+            const comandaActualizada = { ...comanda }
+            comandaActualizada.tareas = comandaActualizada.tareas.map(tareaState => tareaState._id === data._id
+                ? data
+                : tareaState)
+            setComanda(comandaActualizada);
+            setPausa(false);
+        }
+        catch (error) {
+            console.log(error);
+        }
+    }
+
+
+
+    const terminarTarea = async (tarea) => {
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) return
+            const config = {
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`
+                }
+            }
+
+            tarea.tiempo = parseInt(tiempo) + parseInt(tarea?.tiempo) || tiempo;
+            tarea.estado = estado;
+            const { data } = await clienteAxios.put(`/tareas/${tarea._id}`, tarea, config);
+            const comandaActualizada = { ...comanda }
+            comandaActualizada.tareas = comandaActualizada.tareas.map(tareaState => tareaState._id === data._id
+                ? data
+                : tareaState)
+            setComanda(comandaActualizada);
+        }
+        catch (error) {
+            console.log(error);
+        }
+    }
+
+    //console.log(tiempo);
+
+
+
+
+    return (
+        <>
+            <ControlButtons
+                tarea={tarea}
+                handleStart={handleStart}
+                handlePauseResume={handlePauseResume}
+                handleTerminar={handleTerminar}
+                estado={estado}
+                active={active}
+                pausa={pausa}
+                terminarTarea={terminarTarea}
+                guardarProgreso={guardarProgreso}
+                state={state}
+            />
+        </>
+    )
+}
+
+export default Cronometro;
+

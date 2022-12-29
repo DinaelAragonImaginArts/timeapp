@@ -1,0 +1,122 @@
+import useView from '../../hooks/UseView';
+import ControlButtons from './ControlButtons';
+import { useState, useEffect } from 'react';
+import clienteAxios from '../../config/clienteAxios';
+
+const Cronometro = ({ tarea }) => {
+    const [active, setActive] = useState(false);
+    const [pause, setPause] = useState(true);
+    const [tiempo, setTiempo] = useState(0);
+    const [estado, setEstado] = useState(false);
+    const { setComanda, comanda } = useView();
+
+    //Efecto de cronometro
+    useEffect(() => {
+        let interval = null;
+        if (active && pause === false) {
+            interval = setInterval(() => {
+                setTiempo((tiempo) => tiempo + 1000);
+            }, 1000);
+        }
+        else {
+            clearInterval(interval);
+        }
+        return () => {
+            clearInterval(interval);
+        }
+    }, [active, pause]);
+
+
+     /*let iniciio = new Date();
+     const inicio = iniciio.getMinutes() + ':' + iniciio.getSeconds()*/
+    
+
+    //console.log(60 - parseInt(inicio))
+
+    const handleStart = () => {
+        setActive(true);
+        setPause(false);
+        setEstado(true);
+    }
+
+    const handlePauseResume = () => {
+        const actualizarTarea = async (tarea) => {
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) return
+                const config = {
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`
+                    }
+                }
+                tarea.tiempo = parseInt(tiempo) + parseInt(tarea?.tiempo) || tiempo;
+                const { data } = await clienteAxios.put(`/tareas/${tarea._id}`, tarea, config);
+                setTiempo(0)
+            } catch (error) {
+                console.log(error);
+            }
+        };
+        actualizarTarea(tarea);
+        //Lo crontrario al estado de pausa del cronometro
+        //Si el cronometro esta pausado se pone en play desde el front
+        setPause(!pause);
+    }
+
+    const handleTerminar = async tarea => {
+        try {
+
+            const token = localStorage.getItem('token');
+            if (!token) return
+            const config = {
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`
+                }
+            }
+            tarea.tiempo = parseInt(tiempo) + parseInt(tarea?.tiempo) || tiempo;
+            tarea.estado = estado;
+            console.log(tarea.tiempo);
+            const { data } = await clienteAxios.put(`/tareas/${tarea._id}`, tarea, config);
+            const comandaActualizada = { ...comanda }
+            comandaActualizada.tareas = comandaActualizada.tareas.map(tareaState => tareaState._id === data._id
+                ? data
+                : tareaState)
+            setComanda(comandaActualizada);
+            setActive(false);
+            setTiempo(0);
+        }
+        catch (error) {
+            console.log(error);
+        }
+    }
+
+    return (
+        <>
+            <div className="">
+                <span
+                    className="font-bold text-xl"
+                >
+                    {('0' + Math.floor((tiempo / 60000) % 60)).slice(-2)}:
+                </span>
+                <span
+                    className="font-bold text-xl"
+                >
+                    {('0' + Math.floor((tiempo / 1000) % 60)).slice(-2)}
+                </span>
+            </div>
+            <ControlButtons
+                tarea={tarea}
+                handlePauseResume={handlePauseResume}
+                handleStart={handleStart}
+                handleTerminar={handleTerminar}
+                active={active}
+                pause={pause}
+                estado={estado}
+            />
+        </>
+    )
+}
+
+export default Cronometro;
+
